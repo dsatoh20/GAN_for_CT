@@ -411,4 +411,4 @@ for i in range(0, 5):
 
     # 下段に生成データを表示する
     plt.subplot(2, 5, 5+i+1)
-    plt.imshow(fake_images[i][0].cpu().detach().numpy(), 'gray') # ひどい画像しかでない。CovTranspose2D（誤差逆伝播法）を見直す必要あり。
+    plt.imshow(fake_images[i][0].cpu().detach().numpy(), 'gray') # ひどい画像しかでない。CovTranspose2D（逆転置畳み込み）を見直す必要あり。
