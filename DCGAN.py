@@ -22,7 +22,7 @@ random.seed(1234)
 ### Generatorの実装
 class Generator(nn.Module):
 
-    def __init__(self, z_dim=20, image_size=128):
+    def __init__(self, z_dim=20, image_size=256):
         super(Generator, self).__init__()
 
         self.layer1 = nn.Sequential(
@@ -50,8 +50,8 @@ class Generator(nn.Module):
             nn.ReLU(inplace=True))
 
         self.last = nn.Sequential(
-            nn.ConvTranspose2d(image_size, 1, kernel_size=4,
-                               stride=2, padding=1),
+            nn.ConvTranspose2d(image_size, 1, kernel_size=10,
+                               stride=8, padding=1),# 1,4,2,1
             nn.Tanh())
         # 注意：白黒画像なので出力チャネルは1つだけ
 
@@ -63,12 +63,13 @@ class Generator(nn.Module):
         out = self.last(out)
 
         return out
+
       
 # 動作確認
 import matplotlib.pyplot as plt
 %matplotlib inline
 
-G = Generator(z_dim=20, image_size=128)
+G = Generator(z_dim=20, image_size=256)
 
 # 入力する乱数
 input_z = torch.randn(1, 20)
@@ -86,7 +87,7 @@ plt.show()
 ### Discriminatorの実装
 class Discriminator(nn.Module):
 
-    def __init__(self, z_dim=20, image_size=128):
+    def __init__(self, z_dim=20, image_size=256):
         super(Discriminator, self).__init__()
 
         self.layer1 = nn.Sequential(
@@ -110,7 +111,7 @@ class Discriminator(nn.Module):
                       stride=2, padding=1),
             nn.LeakyReLU(0.1, inplace=True))
 
-        self.last = nn.Conv2d(image_size*8, 1, kernel_size=4, stride=1)
+        self.last = nn.Conv2d(image_size*8, 1, kernel_size=10, stride=10, padding=1) # 1,4,1,0
 
     def forward(self, x):
         out = self.layer1(x)
@@ -122,7 +123,7 @@ class Discriminator(nn.Module):
         return out
 
 # 動作確認
-D = Discriminator(z_dim=20, image_size=128)
+D = Discriminator(z_dim=20, image_size=256)
 
 # 偽画像を生成
 input_z = torch.randn(1, 20)
@@ -204,7 +205,7 @@ train_dataloader = torch.utils.data.DataLoader(
 batch_iterator = iter(train_dataloader)  # イテレータに変換
 imges = next(batch_iterator)  # 1番目の要素を取り出す
 
-print(imges.size())  # torch.Size([64, 1, 128, 128])
+print(imges.size())  # torch.Size([64, 1, 256, 256])
 
 
 ### 学習
@@ -371,6 +372,15 @@ num_epochs = 200
 G_update, D_update = train_model(
     G, D, dataloader=train_dataloader, num_epochs=num_epochs) # ValueError: Target size (torch.Size([64])) must be the same as input size (torch.Size([1600]))
 
+# モデルの保存
+torch.save(G_update, path+"G_256_0.pth")
+torch.save(D_update, path+"D_256_0.pth")
+
+"""
+# モデルの取得
+G_update = torch.load(path + "G_256.pth")
+D_update = torch.load(path + "D_256.pth")
+"""
 
 # 生成画像と訓練データを可視化する
 # 本セルは良い感じの画像が生成されるまで、何度も実行し直しています。
@@ -401,4 +411,4 @@ for i in range(0, 5):
 
     # 下段に生成データを表示する
     plt.subplot(2, 5, 5+i+1)
-    plt.imshow(fake_images[i][0].cpu().detach().numpy(), 'gray')
+    plt.imshow(fake_images[i][0].cpu().detach().numpy(), 'gray') # ひどい画像しかでない。CovTranspose2D（誤差逆伝播法）を見直す必要あり。
