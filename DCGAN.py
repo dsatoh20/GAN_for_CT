@@ -91,8 +91,8 @@ class Discriminator(nn.Module):
         super(Discriminator, self).__init__()
 
         self.layer1 = nn.Sequential(
-            nn.Conv2d(1, image_size, kernel_size=4,
-                      stride=2, padding=1),
+            nn.Conv2d(1, image_size, kernel_size=10,
+                      stride=8, padding=1),
             nn.LeakyReLU(0.1, inplace=True))
         # 注意：白黒画像なので入力チャネルは1つだけ
 
@@ -411,4 +411,4 @@ for i in range(0, 5):
 
     # 下段に生成データを表示する
     plt.subplot(2, 5, 5+i+1)
-    plt.imshow(fake_images[i][0].cpu().detach().numpy(), 'gray') # ひどい画像しかでない。CovTranspose2D（転置畳み込み）を見直す必要あり。
+    plt.imshow(fake_images[i][0].cpu().detach().numpy(), 'gray')
