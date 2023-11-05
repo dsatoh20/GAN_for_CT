@@ -37,7 +37,7 @@ while i < n:
         padding_img = cv2.copyMakeBorder(img, padding_half, padding_half, 0, 0, cv2.BORDER_CONSTANT, (0, 0, 0))
     else:
         padding_img = cv2.copyMakeBorder(img, padding_half+1, padding_half, 0, 0, cv2.BORDER_CONSTANT, (0, 0, 0))
-    padding_img = cv2.resize(padding_img, (128, 128), cv2.INTER_NEAREST) # 128x128にリサイズ
+    padding_img = cv2.resize(padding_img, (256, 256), cv2.INTER_NEAREST) # 128x128にリサイズ
     padding_img = cv2.cvtColor(padding_img, cv2.COLOR_BGR2GRAY) # チャンネル数3->1
     cv2.imwrite('./COVID-19_pad/train/COVID/COVID_{}.png'.format(i), padding_img)
     
@@ -62,7 +62,7 @@ while i < m:
         padding_img = cv2.copyMakeBorder(img, padding_half, padding_half, 0, 0, cv2.BORDER_CONSTANT, (0, 0, 0))
     else:
         padding_img = cv2.copyMakeBorder(img, padding_half+1, padding_half, 0, 0, cv2.BORDER_CONSTANT, (0, 0, 0))
-    padding_img = cv2.resize(padding_img, (128, 128), cv2.INTER_NEAREST) # 128x128にリサイズ
+    padding_img = cv2.resize(padding_img, (256, 256), cv2.INTER_NEAREST) # 128x128にリサイズ
     padding_img = cv2.cvtColor(padding_img, cv2.COLOR_BGR2GRAY) # チャンネル数3->1
     cv2.imwrite('./COVID-19_pad/train/NonCOVID/train/NonCOVID_{}.png'.format(i), padding_img)
     
