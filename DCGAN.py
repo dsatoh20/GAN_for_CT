@@ -402,13 +402,13 @@ G_update, D_update = train_model(
 
 
 # モデルの保存
-torch.save(G_update, path+"G_256_2.pth")
-torch.save(D_update, path+"D_256_2.pth")
+torch.save(G_update, path+"model/DCGAN/G_256_2.pth")
+torch.save(D_update, path+"model/DCGAN/D_256_2.pth")
 
 """
 # モデルの取得
-G_update = torch.load(path + "G_256.pth")
-D_update = torch.load(path + "D_256.pth")
+G_update = torch.load(path + "model/DCGAN/G_256.pth")
+D_update = torch.load(path + "model/DCGAN/D_256.pth")
 """
 
 # 生成画像と訓練データを可視化する
