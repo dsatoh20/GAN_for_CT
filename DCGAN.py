@@ -228,8 +228,29 @@ D.apply(weights_init)
 
 print("ネットワークの初期化完了")
 
-# モデルを学習させる関数を作成
+# EarlyStoppingを実装
 
+class EarlyStopping():
+  def __init__(self, patience=0, verbose=0):
+    self._step = 0
+    self._loss = float('inf')
+    self._patience = patience
+    self.verbose = verbose
+
+  def validate(self, loss):
+    if self._loss < loss:
+      self._step += 1
+      if self._step > self._patience:
+        if self.verbose:
+          print('early stopping')
+        return True
+    else:
+      self._step = 0
+      self._loss = loss
+
+    return False
+
+# モデルを学習させる関数を作成
 
 def train_model(G, D, dataloader, num_epochs):
 
@@ -249,6 +270,10 @@ def train_model(G, D, dataloader, num_epochs):
     # パラメータをハードコーディング
     z_dim = 20
     mini_batch_size = 64
+    
+    # EarlyStoppingを定義
+    g_early_stopping = EarlyStopping(patience=30, verbose=1)
+    d_early_stopping = EarlyStopping(patience=30, verbose=1)
 
     # ネットワークをGPUへ
     G.to(device)
@@ -363,18 +388,22 @@ def train_model(G, D, dataloader, num_epochs):
             epoch, epoch_d_loss/batch_size, epoch_g_loss/batch_size))
         print('timer:  {:.4f} sec.'.format(t_epoch_finish - t_epoch_start))
         t_epoch_start = time.time()
+        
+        if g_early_stopping.validate(np.mean(epoch_g_loss)) and d_early_stopping.validate(np.mean(epoch_d_loss)):
+          break # "early stopping"が2つprintされて終了
 
     return G, D
 
 # 学習・検証を実行する
-# 6分ほどかかる
-num_epochs = 200
+# 8s x epoch数の時間がかかる
+num_epochs = 10000 # early_stoppingするので、大きければなんでもいい
 G_update, D_update = train_model(
-    G, D, dataloader=train_dataloader, num_epochs=num_epochs) # ValueError: Target size (torch.Size([64])) must be the same as input size (torch.Size([1600]))
+    G, D, dataloader=train_dataloader, num_epochs=num_epochs)
+
 
 # モデルの保存
-torch.save(G_update, path+"G_256_0.pth")
-torch.save(D_update, path+"D_256_0.pth")
+torch.save(G_update, path+"G_256_2.pth")
+torch.save(D_update, path+"D_256_2.pth")
 
 """
 # モデルの取得
