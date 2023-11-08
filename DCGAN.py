@@ -396,8 +396,8 @@ def train_model(G, D, dataloader, num_epochs):
         print('timer:  {:.4f} sec.'.format(t_epoch_finish - t_epoch_start))
         t_epoch_start = time.time()
 
-        d_loss_list.append(epoch_d_loss)
-        g_loss_list.append(epoch_g_loss)
+        d_loss_list.append(epoch_d_loss/batch_size)
+        g_loss_list.append(epoch_g_loss/batch_size)
 
         """
         # if g_early_stopping.validate(np.mean(epoch_g_loss)) and d_early_stopping.validate(np.mean(epoch_d_loss)):
