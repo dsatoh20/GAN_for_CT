@@ -93,25 +93,28 @@ class Discriminator(nn.Module):
         self.layer1 = nn.Sequential(
             nn.Conv2d(1, image_size, kernel_size=10,
                       stride=8, padding=1),
-            nn.LeakyReLU(0.1, inplace=True))
+            nn.LeakyReLU(0.1, inplace=True),
+            nn.Dropout(p=0.5))
         # 注意：白黒画像なので入力チャネルは1つだけ
 
         self.layer2 = nn.Sequential(
             nn.Conv2d(image_size, image_size*2, kernel_size=4,
                       stride=2, padding=1),
-            nn.LeakyReLU(0.1, inplace=True))
+            nn.LeakyReLU(0.1, inplace=True),
+            nn.Dropout(p=0.5))
 
         self.layer3 = nn.Sequential(
             nn.Conv2d(image_size*2, image_size*4, kernel_size=4,
                       stride=2, padding=1),
-            nn.LeakyReLU(0.1, inplace=True))
-
+            nn.LeakyReLU(0.1, inplace=True),
+            nn.Dropout(p=0.5))
         self.layer4 = nn.Sequential(
             nn.Conv2d(image_size*4, image_size*8, kernel_size=4,
                       stride=2, padding=1),
-            nn.LeakyReLU(0.1, inplace=True))
+            nn.LeakyReLU(0.1, inplace=True),
+            nn.Dropout(p=0.5))
 
-        self.last = nn.Conv2d(image_size*8, 1, kernel_size=10, stride=10, padding=1) # 1,4,1,0
+        self.last = nn.Conv2d(image_size*8, 1, kernel_size=4, stride=1, padding=0)
 
     def forward(self, x):
         out = self.layer1(x)
@@ -229,7 +232,6 @@ D.apply(weights_init)
 print("ネットワークの初期化完了")
 
 # EarlyStoppingを実装
-
 class EarlyStopping():
   def __init__(self, patience=0, verbose=0):
     self._step = 0
@@ -252,6 +254,7 @@ class EarlyStopping():
 
 # モデルを学習させる関数を作成
 
+
 def train_model(G, D, dataloader, num_epochs):
 
     # GPUが使えるかを確認
@@ -270,11 +273,11 @@ def train_model(G, D, dataloader, num_epochs):
     # パラメータをハードコーディング
     z_dim = 20
     mini_batch_size = 64
-    
+    """
     # EarlyStoppingを定義
-    g_early_stopping = EarlyStopping(patience=30, verbose=1)
-    d_early_stopping = EarlyStopping(patience=30, verbose=1)
-
+    g_early_stopping = EarlyStopping(patience=100, verbose=1)
+    # d_early_stopping = EarlyStopping(patience=30, verbose=1)
+    """
     # ネットワークをGPUへ
     G.to(device)
     D.to(device)
@@ -292,6 +295,10 @@ def train_model(G, D, dataloader, num_epochs):
     # イテレーションカウンタをセット
     iteration = 1
     logs = []
+
+    # lossを格納
+    d_loss_list = []
+    g_loss_list = []
 
     # epochのループ
     for epoch in range(num_epochs):
@@ -323,13 +330,11 @@ def train_model(G, D, dataloader, num_epochs):
             # 正解ラベルと偽ラベルを作成
             # epochの最後のイテレーションはミニバッチの数が少なくなる
             mini_batch_size = imges.size()[0]
-            label_real = torch.full((mini_batch_size,), 1).to(device) 
-            label_fake = torch.full((mini_batch_size,), 0).to(device) 
-
+            label_real = torch.full((mini_batch_size,), 1).to(device)
+            label_fake = torch.full((mini_batch_size,), 0).to(device)
 
             # 真の画像を判定
             d_out_real = D(imges)
-
 
             # 偽の画像を生成して判定
             input_z = torch.randn(mini_batch_size, z_dim).to(device)
@@ -381,6 +386,8 @@ def train_model(G, D, dataloader, num_epochs):
             epoch_g_loss += g_loss.item()
             iteration += 1
 
+
+
         # epochのphaseごとのlossと正解率
         t_epoch_finish = time.time()
         print('-------------')
@@ -388,22 +395,35 @@ def train_model(G, D, dataloader, num_epochs):
             epoch, epoch_d_loss/batch_size, epoch_g_loss/batch_size))
         print('timer:  {:.4f} sec.'.format(t_epoch_finish - t_epoch_start))
         t_epoch_start = time.time()
-        
-        if g_early_stopping.validate(np.mean(epoch_g_loss)) and d_early_stopping.validate(np.mean(epoch_d_loss)):
-          break # "early stopping"が2つprintされて終了
 
-    return G, D
+        d_loss_list.append(epoch_d_loss)
+        g_loss_list.append(epoch_g_loss)
+
+        """
+        # if g_early_stopping.validate(np.mean(epoch_g_loss)) and d_early_stopping.validate(np.mean(epoch_d_loss)):
+        if g_early_stopping.validate(np.mean(epoch_g_loss)):
+          break # "early stopping"が2つprintされて終了
+        """
+
+    return G, D, d_loss_list, g_loss_list
+
 
 # 学習・検証を実行する
 # 8s x epoch数の時間がかかる
-num_epochs = 10000 # early_stoppingするので、大きければなんでもいい
-G_update, D_update = train_model(
+num_epochs = 100
+G_update, D_update, d_loss_list, g_loss_list = train_model(
     G, D, dataloader=train_dataloader, num_epochs=num_epochs)
 
+# Tensorboard的なlossのプロット
+x = np.arange(1, 201)
+plt.plot(x, d_loss_list, color="grey")
+plt.plot(x, g_loss_list, color="black")
+
+plt.savefig(path + "model/DCGAN/G_loss_256_6.png")
 
 # モデルの保存
-torch.save(G_update, path+"model/DCGAN/G_256_2.pth")
-torch.save(D_update, path+"model/DCGAN/D_256_2.pth")
+torch.save(G_update, path+"model/DCGAN/G_256_6.pth")
+torch.save(D_update, path+"model/DCGAN/D_256_6.pth")
 
 """
 # モデルの取得
