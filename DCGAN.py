@@ -26,32 +26,38 @@ class Generator(nn.Module):
         super(Generator, self).__init__()
 
         self.layer1 = nn.Sequential(
-            nn.ConvTranspose2d(z_dim, image_size * 8,
+            nn.ConvTranspose2d(z_dim, image_size * 16,
                                kernel_size=4, stride=1),
-            nn.BatchNorm2d(image_size * 8),
+            nn.BatchNorm2d(image_size * 16),
             nn.ReLU(inplace=True))
 
         self.layer2 = nn.Sequential(
+            nn.ConvTranspose2d(image_size * 16, image_size * 8,
+                               kernel_size=4, stride=2, padding=1),
+            nn.BatchNorm2d(image_size * 8),
+            nn.ReLU(inplace=True))
+
+        self.layer3 = nn.Sequential(
             nn.ConvTranspose2d(image_size * 8, image_size * 4,
                                kernel_size=4, stride=2, padding=1),
             nn.BatchNorm2d(image_size * 4),
             nn.ReLU(inplace=True))
 
-        self.layer3 = nn.Sequential(
+        self.layer4 = nn.Sequential(
             nn.ConvTranspose2d(image_size * 4, image_size * 2,
                                kernel_size=4, stride=2, padding=1),
             nn.BatchNorm2d(image_size * 2),
             nn.ReLU(inplace=True))
 
-        self.layer4 = nn.Sequential(
+        self.layer5 = nn.Sequential(
             nn.ConvTranspose2d(image_size * 2, image_size,
                                kernel_size=4, stride=2, padding=1),
             nn.BatchNorm2d(image_size),
             nn.ReLU(inplace=True))
 
         self.last = nn.Sequential(
-            nn.ConvTranspose2d(image_size, 1, kernel_size=10,
-                               stride=8, padding=1),# 1,4,2,1
+            nn.ConvTranspose2d(image_size, 1, kernel_size=6,
+                               stride=4, padding=1),# 1,4,2,1
             nn.Tanh())
         # 注意：白黒画像なので出力チャネルは1つだけ
 
@@ -60,6 +66,7 @@ class Generator(nn.Module):
         out = self.layer2(out)
         out = self.layer3(out)
         out = self.layer4(out)
+        out = self.layer5(out)
         out = self.last(out)
 
         return out
@@ -85,42 +92,54 @@ plt.imshow(img_transformed, 'gray')
 plt.show()
 
 ### Discriminatorの実装
+
 class Discriminator(nn.Module):
 
     def __init__(self, z_dim=20, image_size=256):
         super(Discriminator, self).__init__()
 
         self.layer1 = nn.Sequential(
-            nn.Conv2d(1, image_size, kernel_size=10,
-                      stride=8, padding=1),
+            nn.Conv2d(1, image_size, kernel_size=6,
+                      stride=4, padding=1),
             nn.LeakyReLU(0.1, inplace=True),
-            nn.Dropout(p=0.5))
+            nn.Dropout(p=0.7)
+            )
         # 注意：白黒画像なので入力チャネルは1つだけ
 
         self.layer2 = nn.Sequential(
             nn.Conv2d(image_size, image_size*2, kernel_size=4,
                       stride=2, padding=1),
             nn.LeakyReLU(0.1, inplace=True),
-            nn.Dropout(p=0.5))
+            nn.Dropout(p=0.7)
+            )
 
         self.layer3 = nn.Sequential(
             nn.Conv2d(image_size*2, image_size*4, kernel_size=4,
                       stride=2, padding=1),
             nn.LeakyReLU(0.1, inplace=True),
-            nn.Dropout(p=0.5))
+            nn.Dropout(p=0.7)
+            )
         self.layer4 = nn.Sequential(
             nn.Conv2d(image_size*4, image_size*8, kernel_size=4,
                       stride=2, padding=1),
             nn.LeakyReLU(0.1, inplace=True),
-            nn.Dropout(p=0.5))
+            nn.Dropout(p=0.7)
+            )
+        self.layer5 = nn.Sequential(
+            nn.Conv2d(image_size*8, image_size*16, kernel_size=4,
+                      stride=2, padding=1),
+            nn.LeakyReLU(0.1, inplace=True),
+            nn.Dropout(p=0.7)
+            )
 
-        self.last = nn.Conv2d(image_size*8, 1, kernel_size=4, stride=1, padding=0)
+        self.last = nn.Conv2d(image_size*16, 1, kernel_size=4, stride=2, padding=0)
 
     def forward(self, x):
         out = self.layer1(x)
         out = self.layer2(out)
         out = self.layer3(out)
         out = self.layer4(out)
+        out = self.layer5(out)
         out = self.last(out)
 
         return out
@@ -409,8 +428,8 @@ def train_model(G, D, dataloader, num_epochs):
 
 
 # 学習・検証を実行する
-# 8s x epoch数の時間がかかる
-num_epochs = 100
+# 34s x epoch数の時間がかかる
+num_epochs = 200
 G_update, D_update, d_loss_list, g_loss_list = train_model(
     G, D, dataloader=train_dataloader, num_epochs=num_epochs)
 
