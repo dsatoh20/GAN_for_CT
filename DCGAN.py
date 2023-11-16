@@ -22,7 +22,7 @@ random.seed(1234)
 ### Generatorの実装
 class Generator(nn.Module):
 
-    def __init__(self, z_dim=20, image_size=256):
+    def __init__(self, z_dim=40, image_size=256):
         super(Generator, self).__init__()
 
         self.layer1 = nn.Sequential(
@@ -76,12 +76,12 @@ class Generator(nn.Module):
 import matplotlib.pyplot as plt
 %matplotlib inline
 
-G = Generator(z_dim=20, image_size=256)
+G = Generator(z_dim=40, image_size=256)
 
 # 入力する乱数
-input_z = torch.randn(1, 20)
+input_z = torch.randn(1, 40)
 
-# テンソルサイズを(1, 20, 1, 1)に変形
+# テンソルサイズを(1, 40, 1, 1)に変形
 input_z = input_z.view(input_z.size(0), input_z.size(1), 1, 1)
 
 # 偽画像を出力
@@ -95,7 +95,7 @@ plt.show()
 
 class Discriminator(nn.Module):
 
-    def __init__(self, z_dim=20, image_size=256):
+    def __init__(self, z_dim=40, image_size=256):
         super(Discriminator, self).__init__()
 
         self.layer1 = nn.Sequential(
@@ -145,10 +145,10 @@ class Discriminator(nn.Module):
         return out
 
 # 動作確認
-D = Discriminator(z_dim=20, image_size=256)
+D = Discriminator(z_dim=40, image_size=256)
 
 # 偽画像を生成
-input_z = torch.randn(1, 20)
+input_z = torch.randn(1, 40)
 input_z = input_z.view(input_z.size(0), input_z.size(1), 1, 1)
 fake_images = G(input_z)
 
@@ -290,7 +290,7 @@ def train_model(G, D, dataloader, num_epochs):
     criterion = nn.BCEWithLogitsLoss(reduction='mean')
 
     # パラメータをハードコーディング
-    z_dim = 20
+    z_dim = 40
     mini_batch_size = 64
     """
     # EarlyStoppingを定義
@@ -434,7 +434,7 @@ G_update, D_update, d_loss_list, g_loss_list = train_model(
     G, D, dataloader=train_dataloader, num_epochs=num_epochs)
 
 # Tensorboard的なlossのプロット
-x = np.arange(1, 201)
+x = np.arange(1, num_epochs+1)
 plt.plot(x, d_loss_list, color="grey")
 plt.plot(x, g_loss_list, color="black")
 
@@ -457,7 +457,7 @@ device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
 
 # 入力の乱数生成
 batch_size = 8
-z_dim = 20
+z_dim = 40
 fixed_z = torch.randn(batch_size, z_dim)
 fixed_z = fixed_z.view(fixed_z.size(0), fixed_z.size(1), 1, 1)
 
